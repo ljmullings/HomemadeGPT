@@ -16,8 +16,8 @@ This project implements a basic GPT (Generative Pre-trained Transformer) model f
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/gpt-from-scratch.git
-   cd gpt-from-scratch
+   git clone https://github.com/ljmullings/HomemadeGPT.git
+   cd HomemadeGPT
 
 2. **Create and activate a Conda environment:**
   ```bash
