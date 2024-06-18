@@ -39,7 +39,7 @@ This project implements a basic GPT (Generative Pre-trained Transformer) model f
 - train.py: Script to train the GPT model.
 - generate_text.py: Script to generate text using the trained GPT model.
 
-### Training the Model
+## Training the Model
 1. **Prepare the dummy data:**
 Ensure your train.py script includes a function to generate or load dummy training data.
 
@@ -49,7 +49,7 @@ python train.py
 ```
 This will train the model and save the trained model checkpoint to gpt_model.pth.
 
-### Generating Text
+## Generating Text
 1. **Generate text using the trained model:**
 
 ```bash
@@ -57,7 +57,7 @@ python generate_text.py
 ```
 This script will load the trained model and generate text starting from a specified start token.
 
-### Files
+## Files
 #### gpt.py
 Defines the GPT model architecture. It includes word embedding, positional encoding, and multiple transformer decoder layers.
 
@@ -79,7 +79,7 @@ Script to train the GPT model using dummy data. It saves the model checkpoint to
 #### generate_text.py
 Script to generate text using the trained GPT model. It starts with a specified start token and generates a sequence of tokens.
 
-### Example Output
+## Example Output
 Example output when generating text:
 
 ```
