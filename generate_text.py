@@ -5,12 +5,12 @@ from gpt import GPT
 # Set the device to CUDA if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Hyperparameters (ensure these match those in train.py)
+# Hyperparameters
 embed_size = 512
 heads = 8
 forward_expansion = 4
 num_layers = 6
-max_len = 100  # Ensure consistency with your model and data
+max_len = 100
 dropout = 0.3
 vocab_size = 50257
 
@@ -20,7 +20,7 @@ tokenizer.pad_token = tokenizer.eos_token
 model = GPT(embed_size, heads, forward_expansion, num_layers, vocab_size, max_len, dropout).to(device)
 
 # Load the model checkpoint
-checkpoint_path = '.\models\gpt_modelv5.pth'
+checkpoint_path = '.\models\your_modelv1.pth'
 checkpoint = torch.load(checkpoint_path)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
@@ -35,9 +35,6 @@ def generate_text(model, tokenizer, start_text, max_length=100, temperature=0.5,
             outputs = model(generated, None)
             next_token_logits = outputs[:, -1, :] / temperature
 
-            # Debug: Print logits of the last token
-            print(f"Next token logits: {next_token_logits}")
-
             # Apply top-k sampling
             if top_k > 0:
                 top_k_values, top_k_indices = torch.topk(next_token_logits, top_k)
@@ -49,9 +46,6 @@ def generate_text(model, tokenizer, start_text, max_length=100, temperature=0.5,
 
             # Ensure next_token is a 2D tensor with shape (batch_size, 1)
             next_token = next_token.squeeze(-1)
-
-            # Debug: Print the next token
-            print(f"Next token: {next_token}")
 
             # Concatenate the next token to the generated sequence
             generated = torch.cat((generated, next_token.unsqueeze(-1)), dim=1)
