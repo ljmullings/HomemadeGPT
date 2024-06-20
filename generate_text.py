@@ -1,76 +1,69 @@
 import torch
 from transformers import GPT2Tokenizer
 from gpt import GPT
-import os
 
-def main():
-    print("Script started.")
-    
-    # check if GPU is available and use it if possible
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
+# Set the device to CUDA if available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # ensure model path exists
-    model_path = 'gpt_model.pth'
-    if not os.path.exists(model_path):
-        print(f"Model path {model_path} does not exist.")
-        return
+# Hyperparameters (ensure these match those in train.py)
+embed_size = 512
+heads = 8
+forward_expansion = 4
+num_layers = 6
+max_len = 100  # Ensure consistency with your model and data
+dropout = 0.3
+vocab_size = 50257
 
-    print("Loading model...")
-    
-    # load the trained model
-    model = GPT(embed_size=512, heads=8, forward_expansion=4, num_layers=6, vocab_size=10000, max_len=100, dropout=0.1)
-    try:
-        checkpoint = torch.load(model_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        return
-    
-    model.to(device)
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+tokenizer.pad_token = tokenizer.eos_token
+
+model = GPT(embed_size, heads, forward_expansion, num_layers, vocab_size, max_len, dropout).to(device)
+
+# Load the model checkpoint
+checkpoint_path = '.\models\gpt_modelv5.pth'
+checkpoint = torch.load(checkpoint_path)
+model.load_state_dict(checkpoint['model_state_dict'])
+model.eval()
+
+def generate_text(model, tokenizer, start_text, max_length=100, temperature=0.5, top_k=50):
     model.eval()
-    print("Model loaded and set to eval mode.")
+    tokens = tokenizer.encode(start_text, return_tensors='pt').to(device)
+    generated = tokens
 
-    try:
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    except Exception as e:
-        print(f"Error loading tokenizer: {e}")
-        return
+    with torch.no_grad():
+        for _ in range(max_length):
+            outputs = model(generated, None)
+            next_token_logits = outputs[:, -1, :] / temperature
 
-    print("Tokenizer loaded.")
+            # Debug: Print logits of the last token
+            print(f"Next token logits: {next_token_logits}")
 
-    # function to generate text
-    def generate_text(model, start_token, max_length=50):
-        model.eval()
-        tokens = torch.tensor([start_token]).unsqueeze(0).to(device)
-        print(f"Starting generation with start token: {start_token}")
+            # Apply top-k sampling
+            if top_k > 0:
+                top_k_values, top_k_indices = torch.topk(next_token_logits, top_k)
+                next_token_probs = torch.softmax(top_k_values, dim=-1)
+                next_token = top_k_indices.gather(-1, torch.multinomial(next_token_probs, 1))
+            else:
+                next_token_probs = torch.softmax(next_token_logits, dim=-1)
+                next_token = torch.multinomial(next_token_probs, 1)
 
-        for i in range(max_length):
-            mask = None
-            print(f"Tokens shape before model: {tokens.shape}")
-            with torch.no_grad():
-                if tokens.max().item() >= model.fc_out.out_features or tokens.min().item() < 0:
-                    raise ValueError(f"Token index out of bounds: {tokens}")
-                outputs = model(tokens, mask)
-                next_token_logits = outputs[:, -1, :]
-                next_token = torch.argmax(next_token_logits, dim=-1).unsqueeze(0)
-                tokens = torch.cat((tokens, next_token), dim=1)  # Append next token
-                print(f"Step {i + 1}: Generated token {next_token.item()}")
+            # Ensure next_token is a 2D tensor with shape (batch_size, 1)
+            next_token = next_token.squeeze(-1)
 
-        return tokens.squeeze().tolist()
+            # Debug: Print the next token
+            print(f"Next token: {next_token}")
 
-    start_token = 0 
+            # Concatenate the next token to the generated sequence
+            generated = torch.cat((generated, next_token.unsqueeze(-1)), dim=1)
 
-    # generate sample output
-    print("Starting text generation...")
-    sample_output = generate_text(model, start_token)
-    print("Text generation complete.")
+            if next_token[0].item() == tokenizer.eos_token_id:
+                break
 
-    # convert token IDs to text
-    generated_text = tokenizer.decode(sample_output, skip_special_tokens=True)
-    print("Generated Text:", generated_text)
+    output_text = tokenizer.decode(generated[0], skip_special_tokens=True)
+    return output_text
 
 if __name__ == "__main__":
-    # set for better debugging
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-    main()
+    start_text = "<Start Text>"
+    print("Generating text...")
+    generated_text = generate_text(model, tokenizer, start_text, max_length=50)  # Increase max_length for more output
+    print("Generated text:", generated_text)
