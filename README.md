@@ -1,6 +1,6 @@
 # GPT Model from Scratch
 
-This project implements a basic GPT (Generative Pre-trained Transformer) model from scratch using PyTorch. The project includes training the model on dummy data and generating text using the trained model.
+This project implements a basic GPT (Generative Pre-trained Transformer) model from scratch using PyTorch. The project includes training the model on csv text data and generating text using the trained model.
 
 ## Table of Contents
 
